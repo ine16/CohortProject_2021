@@ -1,58 +1,50 @@
 ![CDL 2020 Cohort Project](../figures/CDL_logo.jpg)
 ## Project 3: VQE: Constructing potential energy surfaces for small molecules
 
-On the following we will show our results for the LiH and N2 molecules while addressing the questions presented in [instructions.pdf](https://github.com/CDL-Quantum/CohortProject_2021/tree/main/Week3_VQE/Instructions.pdf).
+This project explores state-of-the-art techniques for solving electronic structure problems on NISQ computers. Read [instructions.pdf](https://github.com/CDL-Quantum/CohortProject_2021/tree/main/Week3_VQE/Instructions.pdf) for more details.
+
 
 ### Generating PES using classical methods
+We used Hartree-Fock (HF), Configuration Interaction Singles and Doubles (CISD) and Coupled Cluster Singles and Doubles (CCSD) methods for different molecules in the STO-3G basis. You can find our results in this [Python notebook](./S1_Classical_Methods.ipynb).
 
-To begin with, we will give a brief description of the classical methods we used.
+All of these methods consist of choosing a "trial wavefunction" depending on one or more parameters, and finding the values of these parameters for which the expectation value of the energy is the lowest possible. However, the CCSD method is the only one of them that can obtain energies below the ground state, which makes it non-variational. 
 
-The **Hartree-Fock method (HF)** consists in representing the wavefunction of the system as a single anti-symmetrized product of one-electron functions, known as a Slater determinant. In this scheme, the molecular orbitals are expressed as a linear combination of atomic orbital functions. The combination coefficients are then optimized by a self-consistent variational procedure in which each particle is made to interact with the average density of the other particles. The output of this calculation provides a mean-field approximation to the molecular wavefunction. 
+We present below the PESs generated with each classical method for LiH, H<sub>4</sub> and N<sub>2</sub>. Dashed vertical lines on diatomic molecule graphs indicate the experimental bond length of the molecule according to [NIST database](https://cccbdb.nist.gov/diatomicexpbondx.asp).
 
-Unfortunately, HF is incapable of approximating the electron correlation effects, which are essential for computing energies within or close to chemical accuracy. To correct for this problem, one can expand the wavefunction as a superposition of all the determinants in the electron Fock space. The coefficients in the expansion can be parametrized in different ways; two popular parametrizations are the configuration interaction (CI) and the coupled-cluster (CC) methods.
+![LiH](./lih.png) 
 
-In the full configuration interaction (FCI) approach, which is exact within a given basis, the wavefunction is expanded as a linear combination of all the determinants in the Fock space. The coefficients of the expansion can be solved for by variational minimization of the energy, providing the exact wavefunction for a given orbital basis.
+![H_4](./h4.png) 
 
-Due to the factorial dependence on the number of determinants N related to the total number of spin orbitals, FCI becomes rapidly intractable classically. As a solution to this problem, one can truncate the CI expansion to include only determinants with a fixed number of excitations with respect to a reference configuration (usually-chosen reference: Hartree-Fock state). This idea can be formalized by defining the excitation operator T as a sum of different n-tuple excitation operators:
-![excitation ops](https://latex.codecogs.com/gif.image?%5Cdpi%7B110%7D%20T=%5Csum_%7Bi=1%7D%5E%7Bn%7D%20T_i%5Ctext%7B,%20where%20%7DT_1=%5Csum_%7Bib%7Dt%5Ei_b%20a%5E%5Cdagger_a%20a_i,%5C:%5C:%20T_2=%5Csum_%7Bijbc%7Dt_%7Bbc%7D%5E%7Bij%7Da%5E%5Cdagger_%7Bb%7Da%5E%5Cdagger_c%20a_i%20a_j%5Ctext%7B,%20etc.%7D)
+![N_2](./n2.png)
 
-Tractable classical CI truncation is generally limited to single and double excitation operators, which define the **configuration interaction singles and doubles method (CISD)**.
-  
-The wavefunction of the **coupled-cluster (CC) method** is written as an exponential ansatz
+The system PES is harder to calculate accurately as the number of chemical bonds increases. These graphs are ordered by increasing number of bonds from up to down.
 
-![CC ansatz](https://latex.codecogs.com/gif.image?%5Cdpi%7B110%7D%20%5Cleft%7C%5Cpsi%20%5Cright.%20%5Crangle=e%5E%7BT%7D%20%5Cleft%7CHF%20%5Cright.%20%5Crangle)
-
-In the method known as coupled cluster singles and doubles (CCSD), one truncates T and only considers single and double excitations. Its conventional implementation, employing the similarity-transformed Hamiltonian, is not variational.
+In the LiH case, despite the HF minimum energy is notably different from that of the Full Configuration Interaction (FCI) exact solution, plots for all methods used have its minimum at the same bond length.
 
 
-*Advantages:*
-- Variational methods can be applied in certain cases to calculations of excited states by adding a penalty term to the expectation value of H and minimizing this sum.
-- Useful to solve the electronic Schrödinger equation for many-electron systems, giving accurate approximate solutions.
+Coupled cluster results are fairly reliable when computing energies at equilibrium configurations but likely to fail for transition states or near dissociation limits of multiple bonds. 
 
-Variational methods are likely to **fail** for transition states or near dissociation limits of multiple bonds.
+*Advantages of variational methods:*
 
-Here are the results for the LiH and N2 molecules using [this Python notebook](./S1_Classical_Methods.ipynb).
+- They provide a simple way to place an upper bound on the ground state energy of any quantum system.
+- These methods can be used to calculate excited states in certain situations, adding a penalty term to the expectation value of the Hamiltonian and then minimizing this sum.
+
 
 ### Generating the qubit Hamiltonian
 
-### Unitary transformations
+To proceed to VQE one needs to generate the qubit Hamiltonian. The easiest path is via first generating the electronic Hamiltonian in the second quantized form and then transform it into a qubit-form Hamiltonian using a fermion-qubit mapping. In this [notebook](./S2_Hamiltonian_gen.ipynb), we obtained the qubit Hamiltonian of several molecules using Jordan-Wigner, given by
 
-### Hamiltonian measurements
+![JW](https://latex.codecogs.com/gif.image?%5Cdpi%7B110%7D%20%5C%5Ca_j%5E%5Cdagger%20=%20I%5E%7B%5Cotimes%20n-j-1%7D%5Cotimes%20%5Csigma%5E&plus;_j%20%5Cotimes%20%5Csigma%5Ez_%7Bj-1%7D%20%5Cotimes%20%5Cdots%20%5Cotimes%20%5Csigma%5Ez_%7B1%7D%5C%5Ca_j%20=%20I%5E%7B%5Cotimes%20n-j-1%7D%5Cotimes%20%5Csigma%5E-_j%20%5Cotimes%20%5Csigma%5Ez_%7Bj-1%7D%20%5Cotimes%20%5Cdots%20%5Cotimes%20%5Csigma%5Ez_%7B1%7D,%20)
 
-### Use of quantum hardware
+and Bravyi-Kitaev transformations in each case.
 
 
-### Business Application
-For each week, your team is asked to complete a Business Application. Questions you will be asked are:
-
-* Explain to a layperson the technical problem you solved in this exercise.
-* Explain or provide examples of the types of real-world problems this solution can solve.
-* Identify at least one potential customer for this solution - ie: a business who has this problem and would consider paying to have this problem solved.
-* Prepare a 90 second video explaining the value proposition of your innovation to this potential customer in non-technical language.
-
-For more details refer to the [Business Application found here](./Business_Application.md)
+Fermion-qubit mapping schemes can be broken into two pieces: first, to map occupation number basis vectors to states of qubits; and second, to represent the fermionic creation and annihilation operators in terms of operations on qubits in a way that preserves the fermionic anti-commutation relations. By doing so, we can ensure that a qubit operator (which represents certain fermionic operator) acting on a qubit (i.e, encoded fermionic state) reproduces the action of the associated fermionic operator on the fermionic state.
 
 
 
 ## References
-- J. Romero et at. *"Strategies for quantum computing molecular energies using the unitary coupled cluster ansatz"*. https://arxiv.org/pdf/1701.02691.pdf
+
+https://cccbdb.nist.gov/diatomicexpbondx.asp
+
+Romero et al. *Strategies for quantum computing molecular energies using the unitary coupled cluster ansatz* (2018). arXiv:1701.02691
